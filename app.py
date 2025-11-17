@@ -1,43 +1,41 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-import math
-from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Proyecto Eólico UTP", layout="wide")
 st.markdown("<h1 style='text-align: center; color: #0066cc;'>🌬️ PROYECTO EÓLICO</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>Universidad Tecnológica de Panamá</h3>", unsafe_allow_html=True)
+st.image("https://www.utp.ac.pa/sites/default/files/logo_utp.png", width=200, use_column_width=True)
 
-# Logo UTP
-st.image("https://www.utp.ac.pa/sites/default/files/logo_utp.png", width=200, use_container_width=True)
-
-# Datos simulados (luego conectamos el PZEM real)
+# Datos simulados
 @st.cache_data(ttl=60)
-def datos_simulados():
-    ahora = datetime.now()
-    horas = [ahora - timedelta(hours=i) for i in range(24)]
-    potencia = np.random.normal(80, 50, 24)
+def datos():
+    hora = datetime.now()
+    horas = [hora - timedelta(hours=i) for i in range(24)]
+    potencia = np.random.normal(120, 60, 24)
     potencia = np.clip(potencia, 0, 450)
     return pd.DataFrame({"Hora": horas, "Potencia (W)": potencia})
 
-df = datos_simulados()
+df = datos()
+ultimo = df["Potencia (W)"].iloc[0]
 
-# Métricas en tiempo real
-ultimo = df.iloc[0]
+# Métricas
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Voltaje", f"{np.random.uniform(10,15):.1f} V")
-col2.metric("Corriente", f"{np.random.uniform(0,25):.2f} A")
-col3.metric("Potencia Actual", f"{ultimo['Potencia (W)']:.0f} W")
-estado = "PARADO" if ultimo['Potencia (W)'] < 10 else "GENERANDO"
-col4.metric("Estado", estado)
+col1.metric("Voltaje", f"{np.random.uniform(10,16):.1f} V")
+col2.metric("Corriente", f"{np.random.uniform(0,30):.1f} A")
+col3.metric("Potencia", f"{ultimo:.0f} W")
+col4.metric("Estado", "GENERANDO" if ultimo > 50 else "PARADO")
 
-# Gráfico
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=df["Hora"], y=df["Potencia (W)"], 
-                         fill='tozeroy', line=dict(color='#00ff00'), name="Potencia"))
-fig.update_layout(title="Generación Eólica - Últimas 24 horas", 
-                  xaxis_title="Hora", yaxis_title="Potencia (W)")
-st.plotly_chart(fig, use_container_width=True)
+# Gráfico con matplotlib
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(df["Hora"], df["Potencia (W)"], color='green', linewidth=3)
+ax.fill_between(df["Hora"], df["Potencia (W)"], alpha=0.3, color='green')
+ax.set_title("Generación Eólica - Últimas 24h")
+ax.set_ylabel("Potencia (W)")
+ax.grid(True, alpha=0.3)
+st.pyplot(fig)
 
-st.success("¡Dashboard funcionando! Ahora conectaremos los datos reales de tu PZEM")
+st.success("¡DASHBOARD FUNCIONANDO PERFECTAMENTE!")
+st.balloons()
