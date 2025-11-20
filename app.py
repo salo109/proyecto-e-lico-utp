@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import math
 
-# FONDO LOCAL (el que acabas de subir)
+# FONDO QUE ACABAS DE SUBIR
 st.set_page_config(page_title="Proyecto Eólico UTP", layout="wide")
 st.markdown("""
 <style>
@@ -24,8 +24,9 @@ st.image("https://www.utp.ac.pa/sites/default/files/logo_utp.png", width=180)
 st.markdown("<h1 style='text-align:center; color:#FFD700;'>PROYECTO EÓLICO</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align:center;'>Universidad Tecnológica de Panamá</h3>", unsafe_allow_html=True)
 
+# TU API KEY
 WINDY_KEY = "Oug4xhw6S1In7p2rHUCkue1d5a2ksn0n1"
-LAT, LON = 8.52, -80.35
+LAT, LON = 8.52, -80.35  # Penonomé
 
 @st.cache_data(ttl=300)
 def get_wind():
@@ -43,25 +44,34 @@ area = math.pi * (0.6)**2
 potencia = min(450, 0.5 * 1.225 * area * (viento**3) * 0.35 * 0.93)
 voltaje = round(12 + potencia/32, 1)
 
+# TURBINA QUE GIRA (CORREGIDA)
 rpm = max(15, min(140, viento * 20))
 st.markdown(f"""
 <div style="text-align:center; margin:30px;">
-    <div style="font-size:80px; animation: girar {60/max(1,rpm):.2f}s linear infinite;">Turbina</div>
+    <div style="font-size:80px; display:inline-block; animation: girar {60/max(1,rpm):.2f}s linear infinite;">
+        Turbina
+    </div>
     <h3 style="color:#00FFAA;">{viento:.1f} m/s → {rpm:.0f} RPM</h3>
 </div>
-<style>@keyframes girar {from {transform:rotate(0deg);} to {transform:rotate(360deg);}}</style>
+<style>
+@keyframes girar {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+</style>
 """, unsafe_allow_html=True)
 
+# MÉTRICAS
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Viento Real", f"{viento:.1f} m/s", f"Ráfaga {rafaga:.1f}")
 c2.metric("Voltaje", f"{voltaje:.1f} V")
 c3.metric("Potencia", f"{potencia:.0f} W")
-c4.metric("Estado", "ÓPTIMO" if potencia > 280 else "GENERANDO" if potencia > 80 else "ARRANQUE")
+estado = "ÓPTIMO" if potencia > 280 else "GENERANDO" if potencia > 80 else "ARRANQUE"
+c4.metric("Estado", estado)
 
+# ENERGÍA ACUMULADA
 if 'kwh' not in st.session_state: st.session_state.kwh = 0
 st.session_state.kwh += potencia * 300 / 3600000
 st.markdown(f"<h2 style='text-align:center; color:#FFD700;'>Energía total: {st.session_state.kwh:.3f} kWh</h2>", unsafe_allow_html=True)
 
+# GRÁFICO
 df = pd.DataFrame({"Hora": pd.date_range(end=datetime.now(), periods=144, freq='10min'),
                    "Potencia": [min(450, 0.5*1.225*area*((viento + np.random.normal(0,1.3))**3)*0.35*0.93) for _ in range(144)]})
 st.line_chart(df.set_index("Hora"), use_container_width=True)
